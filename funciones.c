@@ -33,11 +33,21 @@ float leerFlotanteRango(float inicio, float fin)
     } while (val != 1 || num < inicio || num > fin);
     return num;
 }
+
+void DatosActuales(){
+
+    Zona zona;
+    printf("Ingrese el nombre de la zona:\n");
+    fgets(zona.nombreZona, sizeof(zona.nombreZona), stdin);
+}
+
+
+
 // ARCHIVOS BINARIOS
-void GuardarDatosAuto(DatosAuto *autos)
+void GuardarDatosActuales(Zona *zona)
 {
     FILE *f;
-    f = fopen("autos.dat", "ab+");
+    f = fopen("Contaminacion.dat", "ab+");
     if (f == NULL)
     {
         printf("No se puede abrir el archivo\n");

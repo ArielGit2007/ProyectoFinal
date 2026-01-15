@@ -1,10 +1,11 @@
 typedef struct {
-    float CO2;
-    float SO2;
-    float NO2;
-    float PM2_5;
-    float O3;
-    float CO;
+    float PM2_5;    // Partículas finas - CRÍTICO
+    float PM10;     // Partículas gruesas
+    float NO2;      // Dióxido de nitrógeno - MUY IMPORTANTE
+    float SO2;      // Dióxido de azufre
+    float O3;       // Ozono troposférico
+    float CO;  
+    FactoresClimaticos factores; // Factores climáticos asociados     
 }Contaminantes;
 
 typedef struct{
@@ -13,6 +14,15 @@ typedef struct{
     float velocidadViento;
 }FactoresClimaticos;
 
+typedef struct{
+    Contaminantes contaminantes[30]; // Datos de contaminantes para 30 días
+}Historico;
+
+typedef struct{
+    char nombreZona[50];
+    Contaminantes nivelesAceptables;
+    Historico antecedentes;
+}Zona;
 
 
 
