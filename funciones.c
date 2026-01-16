@@ -39,6 +39,27 @@ void DatosActuales(){
     Zona zona;
     printf("Ingrese el nombre de la zona:\n");
     fgets(zona.nombreZona, sizeof(zona.nombreZona), stdin);
+    printf("Ingrese los niveles de contaminantes actuales:\n");
+    printf("PM2.5 (µg/m³): ");
+    zona.NivelesAcual.PM2_5 = leerFlotanteSoloMinimo(0);
+    printf("PM10 (µg/m³): ");
+    zona.NivelesAcual.PM10 = leerFlotanteSoloMinimo(0);
+    printf("NO2 (ppb): ");
+    zona.NivelesAcual.NO2 = leerFlotanteSoloMinimo(0);
+    printf("SO2 (ppb): ");
+    zona.NivelesAcual.SO2 = leerFlotanteSoloMinimo(0);
+    printf("O3 (ppb): ");
+    zona.NivelesAcual.O3 = leerFlotanteSoloMinimo(0);
+    printf("CO (ppm): ");
+    zona.NivelesAcual.CO = leerFlotanteSoloMinimo(0);
+    printf("Ingrese los factores climaticos asociados:\n");
+    printf("Temperatura (°C): ");
+    zona.NivelesAcual.factores.temperatura = leerFlotanteSoloMinimo(-273); // Ejemplo de mínimo
+    printf("Humedad (%%): ");
+    zona.NivelesAcual.factores.humedad = leerFlotanteRango(0, 100);
+    printf("Velocidad del viento (m/s): ");
+    zona.NivelesAcual.factores.velocidadViento = leerFlotanteSoloMinimo(0);
+    GuardarDatosActuales(&zona);
 }
 
 
