@@ -74,6 +74,26 @@ void GuardarDatosActuales(Zona *zona)
         printf("No se puede abrir el archivo\n");
         return;
     }
-    fwrite(autos, sizeof(DatosAuto), 1, f);
+    fwrite(zona, sizeof(Zona), 1, f);
     fclose(f);
+}
+
+int leerDatosActuales(Zona *zonas){
+
+   FILE *f;
+    f = fopen("Contaminacion.dat", "rb");
+    if (f == NULL)
+    {
+        f = fopen("Contaminacion.dat", "ab+");
+        if (f != NULL)
+            fclose(f);
+        return 0;
+    }
+    int count = 0;
+    while (fread(&zonas[count], sizeof(Zona), 1, f) == 1)
+    {
+        count++;
+    }
+    fclose(f);
+    return count;
 }
