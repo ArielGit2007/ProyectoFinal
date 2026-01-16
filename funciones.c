@@ -34,15 +34,33 @@ float leerFlotanteRango(float inicio, float fin)
     return num;
 }
 
+float leerFlotanteSoloMinimo(float inicio)
+{
+    float num;
+    int val;
+    do
+    {
+        val = scanf("%f", &num);
+        if (val != 1 || num < inicio)
+        {
+            printf("El dato ingresado es invalido\n");
+            while (getchar() != '\n')
+                ;
+        }
+    } while (val != 1 || num < inicio);
+    return num;
+}
+
 void DatosActuales(){
 
     Zona zona;
+    getchar(); // Limpiar el buffer de entrada
     printf("Ingrese el nombre de la zona:\n");
     fgets(zona.nombreZona, sizeof(zona.nombreZona), stdin);
     printf("Ingrese los niveles de contaminantes actuales:\n");
-    printf("PM2.5 (µg/m³): ");
+    printf("PM2.5 (ug/m3): ");
     zona.NivelesAcual.PM2_5 = leerFlotanteSoloMinimo(0);
-    printf("PM10 (µg/m³): ");
+    printf("PM10 (ug/m3): ");
     zona.NivelesAcual.PM10 = leerFlotanteSoloMinimo(0);
     printf("NO2 (ppb): ");
     zona.NivelesAcual.NO2 = leerFlotanteSoloMinimo(0);
@@ -53,7 +71,7 @@ void DatosActuales(){
     printf("CO (ppm): ");
     zona.NivelesAcual.CO = leerFlotanteSoloMinimo(0);
     printf("Ingrese los factores climaticos asociados:\n");
-    printf("Temperatura (°C): ");
+    printf("Temperatura (C): ");
     zona.NivelesAcual.factores.temperatura = leerFlotanteSoloMinimo(-273); // Ejemplo de mínimo
     printf("Humedad (%%): ");
     zona.NivelesAcual.factores.humedad = leerFlotanteRango(0, 100);

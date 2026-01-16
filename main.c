@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include "funciones.h"
+#include "funciones.h"
 
 int main(int argc, char const *argv[])
 {
+
+    int opc;
+    do
+    {
     printf("<<<Gestion y prediccion de contaminates aereos>>>\n");
     printf("=================================================\n");
     printf("Seleccione una opcion del menu:\n");
@@ -13,5 +17,21 @@ int main(int argc, char const *argv[])
     printf("3. Promedio historico de contaminantes aereos\n");
     printf("4. Tabla de niveles aceptables de contaminantes aereos\n");
     printf("5. Salir\n");
-    return 0;
+    opc=leerIntegerRango(1,5);
+    switch (opc)
+    {
+    case 1:
+        DatosActuales();
+        break;
+    case 2:
+        break;
+    case 3:
+        break;
+
+    default:
+        break;
+    }
+    
+    } while (opc!=5);
+    
 }
