@@ -448,9 +448,73 @@ void calidadDelAire(Zona *zona)
     }
     else
     {
-        strcpy(zona->calidadAire, "Más allá de la escala/Extrema emergencia");
+        strcpy(zona->calidadAire, "Extrema emergencia");
     }
 }
+
+//Prevenciones
+void prevenirContaminacion(Zona *zona)
+{
+    float ica = zona->ica.ICA;
+    
+    printf("\n=== RECOMENDACIONES DE SALUD ===\n");
+    printf("ICA: %.2f - %s\n\n", ica, zona->calidadAire);
+    
+    if (ica >= 0 && ica <= 50)
+    {
+        printf("- Calidad del aire satisfactoria\n");
+        printf("- Ideal para actividades al aire libre\n");
+        printf("- Sin restricciones para ninguna poblacion\n");
+    }
+    else if (ica >= 51 && ica <= 100)
+    {
+        printf("- Personas sensibles consideren limitar actividades prolongadas\n");
+        printf("- Poblacion general puede realizar actividades normales\n");
+        printf("- Monitorear sintomas en grupos vulnerables\n");
+    }
+    else if (ica >= 101 && ica <= 150)
+    {
+        printf("- Ninos, ancianos y personas con enfermedades respiratorias/cardiacas\n");
+        printf("  deben limitar esfuerzos prolongados al aire libre\n");
+        printf("- Poblacion general puede continuar actividades con precaucion\n");
+        printf("- Considerar posponer ejercicio intenso al aire libre\n");
+    }
+    else if (ica >= 151 && ica <= 200)
+    {
+        printf("- Todos deben limitar esfuerzos prolongados al aire libre\n");
+        printf("- Grupos sensibles eviten actividades extenuantes\n");
+        printf("- Mantener ventanas cerradas si es posible\n");
+        printf("- Considerar uso de mascarilla al salir\n");
+    }
+    else if (ica >= 201 && ica <= 300)
+    {
+        printf("- Todos eviten esfuerzos al aire libre\n");
+        printf("- Grupos sensibles permanezcan en interiores\n");
+        printf("- Usar mascarilla si es necesario salir\n");
+        printf("- Mantener ventanas cerradas\n");
+        printf("- Usar purificadores de aire si estan disponibles\n");
+    }
+    else if (ica >= 301 && ica <= 500)
+    {
+        printf("- ALERTA: Todos permanezcan en interiores\n");
+        printf("- Mantener ventanas y puertas cerradas\n");
+        printf("- Usar purificadores de aire\n");
+        printf("- Evitar cualquier actividad al aire libre\n");
+        printf("- Grupos sensibles busquen atencion medica si presentan sintomas\n");
+    }
+    else
+    {
+        printf("- EMERGENCIA SANITARIA: Condiciones peligrosas\n");
+        printf("- Evacuacion recomendada si es posible\n");
+        printf("- Usar equipo de proteccion respiratoria\n");
+        printf("- Buscar atencion medica inmediata si presenta sintomas\n");
+        printf("- Mantener contacto con autoridades locales\n");
+    }
+    
+    printf("\nGrupos sensibles: ninos, ancianos, mujeres embarazadas,\n");
+    printf("personas con asma, EPOC, enfermedades cardiacas.\n");
+}
+
 // Reporte y guardado de datos
 
 void reporteZonas()
@@ -471,8 +535,6 @@ void reporteZonas()
         int opcion = leerIntegerRango(1, totalZonas);
         Zona zonaSeleccionada = zonas[opcion - 1];
         printf("Reporte de la zona: %s\n", zonaSeleccionada.nombreZona);
-        printf("ICA General de la zona: %.2f\n", zonaSeleccionada.ica.ICA);
-        printf("Calidad del aire general: %s\n", zonaSeleccionada.calidadAire);
         printf("Niveles actuales de contaminantes:\n");
         printf("|%-15s |%-10s |%-10s |%-15s\n", "Contaminante", "Nivel", "ICA", "Calidad");
         printf("----------------------------------------------------------\n");
@@ -482,12 +544,19 @@ void reporteZonas()
         printf("|%-15s |%-10.2f |%-10.2f |%-15s\n", "SO2(ppb)", zonaSeleccionada.NivelesAcual.SO2, zonaSeleccionada.ica.ICA_SO2, zonaSeleccionada.ica.calidad.nivelCalidadSO2);
         printf("|%-15s |%-10.2f |%-10.3f |%-15s\n", "O3(ppm)", zonaSeleccionada.NivelesAcual.O3, zonaSeleccionada.ica.ICA_O3, zonaSeleccionada.ica.calidad.nivelCalidadO3);
         printf("|%-15s |%-10.2f |%-10.3f |%-15s\n", "CO(ppm)", zonaSeleccionada.NivelesAcual.CO, zonaSeleccionada.ica.ICA_CO, zonaSeleccionada.ica.calidad.nivelCalidadCO);
+        printf("----------------------------------------------------------\n");
         printf("Factores climaticos asociados:\n");
         printf("Temperatura: %.2f C\n", zonaSeleccionada.NivelesAcual.factores.temperatura);
         printf("Humedad: %.2f %%\n", zonaSeleccionada.NivelesAcual.factores.humedad);
         printf("Velocidad del viento: %.2f m/s\n", zonaSeleccionada.NivelesAcual.factores.velocidadViento);
+        
+        // Mostrar recomendaciones
+        prevenirContaminacion(&zonaSeleccionada);
+        printf("\n");
     }
 }
+
+
 // ARCHIVOS BINARIOS
 void GuardarDatosActuales(Zona *zona)
 {
@@ -501,7 +570,7 @@ void GuardarDatosActuales(Zona *zona)
     fwrite(zona, sizeof(Zona), 1, f);
     fclose(f);
 }
-void GuardarDatosHistoricos(Zona *zona)
+/*void GuardarDatosHistoricos(Zona *zona)
 {
 
     FILE *f;
@@ -513,7 +582,7 @@ void GuardarDatosHistoricos(Zona *zona)
     }
     fwrite(zona, sizeof(Zona), 1, f);
     fclose(f);
-}
+}*/
 
 int leerDatosActuales(Zona *zonas)
 {

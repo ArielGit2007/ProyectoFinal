@@ -54,6 +54,7 @@ float leerFlotanteRango(float inicio, float fin);
 float leerFlotanteSoloMinimo(float inicio);
 void DatosActuales();
 void GuardarDatosActuales(Zona *zona);
+void GuardarDatosHistoricos(Zona *zona);
 int leerDatosActuales(Zona *zona);
 void calcularICAPm2_5(Zona *zona);
 void calcularICAPm10(Zona *zona);
@@ -66,7 +67,7 @@ void reporteZonas();
 void ingresoDatos();
 void calidadDelAire(Zona *zona);
 void BorrarSaltolinea(char *cadena);
-
+void prevenirContaminacion(Zona *zona);
 
 
 
