@@ -4,6 +4,14 @@ typedef struct{
     float humedad;
     float velocidadViento;
 }FactoresClimaticos;
+typedef struct{
+    char nivelCalidadPM2_5[50];
+    char nivelCalidadPM10[50];
+    char nivelCalidadNO2[50];
+    char nivelCalidadSO2[50];
+    char nivelCalidadO3[50];
+    char nivelCalidadCO[50];
+}CalidadPorContaminante;
 
 typedef struct{
     float ICA_PM2_5;
@@ -13,6 +21,7 @@ typedef struct{
     float ICA_O3;
     float ICA_CO;
     float ICA; // Índice de Calidad del Aire general
+    CalidadPorContaminante calidad;
 }ICA;
 
 typedef struct {
@@ -34,6 +43,7 @@ typedef struct{
     char nombreZona[50];
     Contaminantes NivelesAcual;
     ICA ica;  // ICA calculado para esta zona
+    char calidadAire[100];
 }Zona;
 
 
@@ -45,12 +55,17 @@ float leerFlotanteSoloMinimo(float inicio);
 void DatosActuales();
 void GuardarDatosActuales(Zona *zona);
 int leerDatosActuales(Zona *zona);
-void calcularICAPm2_5();
-void calcularICAPm10();
-void calcularICANO2();
-void calcularICASO2();
-void calcularICAO3();
-void calcularICACO();
+void calcularICAPm2_5(Zona *zona);
+void calcularICAPm10(Zona *zona);
+void calcularICANO2(Zona *zona);
+void calcularICASO2(Zona *zona);
+void calcularICAO3(Zona *zona);
+void calcularICACO(Zona *zona);
+void obtenerICA(Zona *zona);
+void reporteZonas();
+void ingresoDatos();
+void calidadDelAire(Zona *zona);
+void BorrarSaltolinea(char *cadena);
 
 
 

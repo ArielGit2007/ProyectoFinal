@@ -21,9 +21,10 @@ int main(int argc, char const *argv[])
     switch (opc)
     {
     case 1:
-        DatosActuales();
+        ingresoDatos();
         break;
     case 2:
+        reporteZonas();
         break;
     case 3:
         break;
