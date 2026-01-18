@@ -26,13 +26,13 @@ typedef struct {
 }Contaminantes;
 
 typedef struct{
+    char nombreZona[50];
     Contaminantes contaminantes; // Datos de contaminantes actuales
 }Historico;
 
 typedef struct{
     char nombreZona[50];
     Contaminantes NivelesAcual;
-    Historico antecedentes;
     ICA ica;  // ICA calculado para esta zona
 }Zona;
 
@@ -48,6 +48,9 @@ int leerDatosActuales(Zona *zona);
 void calcularICAPm2_5();
 void calcularICAPm10();
 void calcularICANO2();
+void calcularICASO2();
+void calcularICAO3();
+void calcularICACO();
 
 
 
