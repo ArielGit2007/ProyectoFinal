@@ -12,6 +12,7 @@ typedef struct{
     float ICA_SO2;
     float ICA_O3;
     float ICA_CO;
+    float ICA; // Índice de Calidad del Aire general
 }ICA;
 
 typedef struct {
@@ -43,7 +44,11 @@ float leerFlotanteRango(float inicio, float fin);
 float leerFlotanteSoloMinimo(float inicio);
 void DatosActuales();
 void GuardarDatosActuales(Zona *zona);
-int LeerDatosActuales(Zona *zona);
+int leerDatosActuales(Zona *zona);
+void calcularICAPm2_5();
+void calcularICAPm10();
+void calcularICANO2();
+
 
 
 
