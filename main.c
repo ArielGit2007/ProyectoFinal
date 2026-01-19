@@ -29,7 +29,9 @@ int main(int argc, char const *argv[])
     case 3:
         reportePromediosHistoricos();
         break;
-
+    case 4:
+        TablaLimitesICA();
+        break;
     default:
         break;
     }

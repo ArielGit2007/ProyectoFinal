@@ -519,8 +519,8 @@ void prevenirContaminacion(Zona *zona)
 
 // Reporte y guardado de datos
 
-/* Promedia los últimos 30 registros guardados para una zona (case-insensitive).
-   Devuelve cuántos promedió (0 si no encontró) y llena los promedios en los punteros. */
+/* Promedia los últimos 30 registros guardados para una zona dada */
+
 int promedioUltimos30( char *nombreZona,
                       float *pm25, float *pm10, float *no2,
                       float *so2, float *o3, float *co)
@@ -616,9 +616,373 @@ void reporteZonas()
         // Mostrar recomendaciones
         prevenirContaminacion(&zonaSeleccionada);
         printf("\n");
+
+        /* Mostrar predicción para las próximas 24 horas */
+        printf("=== PREDICCION PROXIMAS 24 HORAS ===\n");
+        float pm25pred, pm10pred, no2pred, so2pred, o3pred, copred;
+        float temppred, humedadpred, vvientopred;
+        int usados = prediccionPonderada(zonaSeleccionada.nombreZona, 
+                                         &pm25pred, &pm10pred, &no2pred, &so2pred, &o3pred, &copred,
+                                         &temppred, &humedadpred, &vvientopred);
+        
+        if (usados > 0) {
+            printf("(basado en ultimos %d registros, ajustados por clima)\n", usados);
+            
+            // Crear zona temporal con valores predichos para calcular ICA
+            Zona zonaPred;
+            strcpy(zonaPred.nombreZona, zonaSeleccionada.nombreZona);
+            zonaPred.NivelesAcual.PM2_5 = pm25pred;
+            zonaPred.NivelesAcual.PM10 = pm10pred;
+            zonaPred.NivelesAcual.NO2 = no2pred;
+            zonaPred.NivelesAcual.SO2 = so2pred;
+            zonaPred.NivelesAcual.O3 = o3pred;
+            zonaPred.NivelesAcual.CO = copred;
+            zonaPred.NivelesAcual.factores.temperatura = temppred;
+            zonaPred.NivelesAcual.factores.humedad = humedadpred;
+            zonaPred.NivelesAcual.factores.velocidadViento = vvientopred;
+            
+            // Calcular ICA predicho usando las mismas funciones
+            calcularICAPm2_5(&zonaPred);
+            calcularICAPm10(&zonaPred);
+            calcularICANO2(&zonaPred);
+            calcularICASO2(&zonaPred);
+            calcularICAO3(&zonaPred);
+            calcularICACO(&zonaPred);
+            obtenerICA(&zonaPred);
+            calidadDelAire(&zonaPred);
+            
+            printf("\n*** CALIDAD DEL AIRE PREDICHA: %s (ICA: %.2f) ***\n\n", zonaPred.calidadAire, zonaPred.ica.ICA);
+            
+            printf("Niveles predichos de contaminantes:\n");
+            printf("|%-15s |%-10s |%-10s |%-15s\n", "Contaminante", "Nivel", "ICA", "Calidad");
+            printf("----------------------------------------------------------\n");
+            printf("|%-15s |%-10.2f |%-10.2f |%-15s\n", "PM2.5(ug/m3)", zonaPred.NivelesAcual.PM2_5, zonaPred.ica.ICA_PM2_5, zonaPred.ica.calidad.nivelCalidadPM2_5);
+            printf("|%-15s |%-10.2f |%-10.2f |%-15s\n", "PM10(ug/m3)", zonaPred.NivelesAcual.PM10, zonaPred.ica.ICA_PM10, zonaPred.ica.calidad.nivelCalidadPM10);
+            printf("|%-15s |%-10.2f |%-10.2f |%-15s\n", "NO2(ppb)", zonaPred.NivelesAcual.NO2, zonaPred.ica.ICA_NO2, zonaPred.ica.calidad.nivelCalidadNO2);
+            printf("|%-15s |%-10.2f |%-10.2f |%-15s\n", "SO2(ppb)", zonaPred.NivelesAcual.SO2, zonaPred.ica.ICA_SO2, zonaPred.ica.calidad.nivelCalidadSO2);
+            printf("|%-15s |%-10.2f |%-10.3f |%-15s\n", "O3(ppm)", zonaPred.NivelesAcual.O3, zonaPred.ica.ICA_O3, zonaPred.ica.calidad.nivelCalidadO3);
+            printf("|%-15s |%-10.2f |%-10.3f |%-15s\n", "CO(ppm)", zonaPred.NivelesAcual.CO, zonaPred.ica.ICA_CO, zonaPred.ica.calidad.nivelCalidadCO);
+            printf("----------------------------------------------------------\n");
+            printf("Factores climaticos predichos:\n");
+            printf("Temperatura: %.2f C\n", temppred);
+            printf("Humedad: %.2f %%\n", humedadpred);
+            printf("Velocidad del viento: %.2f m/s\n", vvientopred);
+            
+            // Alertas preventivas
+            printf("\n=== ALERTAS PREVENTIVAS Y RECOMENDACIONES ===\n");
+            int hayAlertas = 0;
+            
+            if (zonaPred.ica.ICA > 100 &&zonaPred.ica.ICA <=150) {
+                printf("\n** ALERTA: Calidad del aire NO aceptable **\n");
+                printf("El ICA predicho (%.2f) supera el nivel moderado.\n", zonaPred.ica.ICA);
+                hayAlertas = 1;
+                
+                printf("\nMEDIDAS DE PROTECCION PERSONAL:\n");
+                printf("- Reducir actividades al aire libre prolongadas\n");
+                printf("- Grupos sensibles: ninos, ancianos, asmaticos deben limitar exposicion\n");
+                printf("- Mantenerse hidratado\n");
+                printf("- Monitorear sintomas respiratorios\n");}
+                
+            if (zonaPred.ica.ICA > 150 && zonaPred.ica.ICA <= 200) {
+                    printf("\n!! ALERTA IMPORTANTE: Nivel INSALUBRE !!\n");
+                    printf("\nMEDIDAS INMEDIATAS:\n");
+                    printf("- Permanecer en espacios cerrados ventilados\n");
+                    printf("- Usar mascarillas N95 o FFP2 si debe salir\n");
+                    printf("- Cerrar ventanas durante horas pico de contaminacion\n");
+                    printf("- Evitar ejercicio intenso al aire libre\n");
+                    printf("- Grupos sensibles: consultar medico si hay sintomas\n");
+                    hayAlertas = 1;
+                }
+                
+            if (zonaPred.ica.ICA > 200 && zonaPred.ica.ICA <= 300) {
+                    printf("\n!!! ALERTA CRITICA: Nivel MUY INSALUBRE !!!\n");
+                    printf("\nMEDIDAS URGENTES:\n");
+                    printf("- Permanecer en interiores con ventanas cerradas\n");
+                    printf("- Usar purificadores de aire con filtros HEPA\n");
+                    printf("- Suspender toda actividad fisica al aire libre\n");
+                    printf("- Grupos vulnerables: atencion medica inmediata si hay dificultad respiratoria\n");
+                    printf("- Usar mascarilla incluso en interiores si hay infiltracion\n");
+                    hayAlertas = 1;
+                }
+                
+            if (zonaPred.ica.ICA > 300 && zonaPred.ica.ICA <= 500) {
+                    printf("\n!!!! EMERGENCIA: Nivel PELIGROSO !!!!\n");
+                    printf("\nSITUACION DE EMERGENCIA - ACCIONES INMEDIATAS:\n");
+                    printf("- TODA la poblacion debe permanecer en interiores\n");
+                    printf("- Suspender clases y actividades laborales no esenciales\n");
+                    printf("- Sellar puertas y ventanas\n");
+                    printf("- Usar purificadores en espacios cerrados\n");
+                    printf("- Buscar atencion medica ante cualquier sintoma\n");
+                    hayAlertas = 1;
+                }
+            if(zonaPred.ica.ICA > 500){
+                    printf("\n!!!!! EMERGENCIA MAXIMA: Nivel EXTREMO !!!!!\n");
+                    printf("\nSITUACION DE EMERGENCIA MAXIMA - ACCIONES URGENTES:\n");
+                    printf("- Evacuacion recomendada si es posible\n");
+                    printf("- Usar equipo de proteccion respiratoria adecuado\n");
+                    printf("- Mantener contacto con autoridades locales\n");
+                    printf("- Buscar atencion medica inmediata\n");
+                    hayAlertas = 1;
+
+                }
+                
+                if(hayAlertas==1){
+                printf("\nRECOMENDACIONES DE MITIGACION:\n");
+                printf("* Autoridades deben:\n");
+                printf("  - Implementar restriccion vehicular\n");
+                printf("  - Suspender actividades industriales no esenciales\n");
+                printf("  - Prohibir quema de residuos y combustibles\n");
+                printf("  - Activar plan de contingencia ambiental\n");
+                printf("  - Aumentar frecuencia de riego de calles\n");
+                printf("* Ciudadania debe:\n");
+                printf("  - Evitar uso de vehiculos particulares (usar transporte publico)\n");
+                printf("  - No quemar basura ni realizar fogatas\n");
+                printf("  - Reducir uso de calefaccion a lena o carbon\n");
+                printf("  - Reportar fuentes de contaminacion visibles\n");
+                }
+            
+            
+            // Alertas por contaminante específico con recomendaciones
+            if (zonaPred.ica.ICA_PM2_5 > 100 || zonaPred.ica.ICA_PM10 > 100) {
+                printf("\n[!] MATERIAL PARTICULADO ELEVADO:\n");
+                if (zonaPred.ica.ICA_PM2_5 > 100){
+                    printf("  - PM2.5: %.2f ug/m3 (ICA: %.2f) - Riesgo respiratorio alto\n", zonaPred.NivelesAcual.PM2_5, zonaPred.ica.ICA_PM2_5);
+                    printf("  Medidas de mitigacion:\n");
+                    printf("  + Evitar quema de residuos y uso de lena para calefaccion\n");
+                    printf("  + Promover transporte publico y vehiculos electricos\n");
+                    printf("  + Implementar zonas verdes y arbolado urbano\n");
+                    printf("  + Controlar emisiones industriales\n");
+                    printf("  + Reducir la circulacion vehicular\n");
+                    printf("  + Fomentar uso de mascarillas en dias de alta contaminacion\n");
+                    printf("\n");
+                }
+                if (zonaPred.ica.ICA_PM10 > 100){
+                    printf("  - PM10: %.2f ug/m3 (ICA: %.2f) - Riesgo respiratorio\n", zonaPred.NivelesAcual.PM10, zonaPred.ica.ICA_PM10);
+                printf("  Medidas de mitigacion:\n");
+                printf("  + Usar mascarilla con filtro (N95/FFP2)\n");
+                printf("  + Reducir trafico vehicular (principal fuente)\n");
+                printf("  + Riego de calles para reducir polvo en suspension\n");
+                printf("  + Controlar emisiones industriales\n");
+                printf("  + Evitar construcciones sin medidas de control de polvo\n");
+                hayAlertas = 1;}
+            }
+            
+            if (zonaPred.ica.ICA_NO2 > 100) {
+                printf("\n[!] DIOXIDO DE NITROGENO ELEVADO:\n");
+                printf("  - NO2: %.2f ppb (ICA: %.2f)\n", zonaPred.NivelesAcual.NO2, zonaPred.ica.ICA_NO2);
+                printf("  - Irrita vias respiratorias, agrava asma y bronquitis\n");
+                printf("  Medidas de mitigacion:\n");
+                printf("  + Reducir circulacion de vehiculos diesel\n");
+                printf("  + Implementar transporte publico electrico\n");
+                printf("  + Mantener motores vehiculares en buen estado\n");
+                printf("  + Regular emisiones de plantas termicas\n");
+                hayAlertas = 1;
+            }
+            
+            if (zonaPred.ica.ICA_SO2 > 100) {
+                printf("\n[!] DIOXIDO DE AZUFRE ELEVADO:\n");
+                printf("  - SO2: %.2f ppb (ICA: %.2f)\n", zonaPred.NivelesAcual.SO2, zonaPred.ica.ICA_SO2);
+                printf("  - Riesgo para enfermedades respiratorias y cardiovasculares\n");
+                printf("  Medidas de mitigacion:\n");
+                printf("  + Usar combustibles con bajo contenido de azufre\n");
+                printf("  + Regular emisiones de industrias y refinerias\n");
+                printf("  + Prohibir quema de carbon y combustibles sucios\n");
+                printf("  + Implementar desulfuracion en chimeneas industriales\n");
+                hayAlertas = 1;
+            }
+            
+            if (zonaPred.ica.ICA_O3 > 100) {
+                printf("\n[!] OZONO TROPOSFERICO ELEVADO:\n");
+                printf("  - O3: %.3f ppm (ICA: %.2f)\n", zonaPred.NivelesAcual.O3, zonaPred.ica.ICA_O3);
+                printf("  - Dano pulmonar, agrava problemas respiratorios\n");
+                printf("  Medidas de mitigacion:\n");
+                printf("  + Reducir emisiones de NOx y COV (precursores de ozono)\n");
+                printf("  + Evitar uso de solventes y pinturas en dias soleados\n");
+                printf("  + Reducir trafico vehicular en horas de mayor radiacion solar\n");
+                printf("  + Plantar arboles (absorben ozono y precursores)\n");
+                printf("  + No realizar ejercicio intenso al aire libre entre 12-18hrs\n");
+                hayAlertas = 1;
+            }
+            
+            if (zonaPred.ica.ICA_CO > 100) {
+                printf("\n[!] MONOXIDO DE CARBONO ELEVADO:\n");
+                printf("  - CO: %.2f ppm (ICA: %.2f)\n", zonaPred.NivelesAcual.CO, zonaPred.ica.ICA_CO);
+                printf("  - Riesgo cardiovascular, reduce oxigenacion sanguinea\n");
+                printf("  Medidas de mitigacion:\n");
+                printf("  + Mejorar combustion vehicular (mantenimiento preventivo)\n");
+                printf("  + Ventilar adecuadamente espacios con calefaccion a gas\n");
+                printf("  + Regular trafico en zonas congestionadas\n");
+                printf("  + Evitar uso de generadores en espacios cerrados\n");
+                printf("  + Promover vehiculos electricos e hibridos\n");
+                hayAlertas = 1;
+            }
+            
+            if (hayAlertas==0) {
+                printf("\nNo se detectan alertas. Calidad del aire dentro de limites aceptables.\n");
+            }
+        } else {
+            printf("No hay suficientes datos historicos para prediccion.\n");
+        }
+        printf("\n");
     }
 }
 
+int prediccionPonderada(char *nombreZona,
+                        float *pm25, float *pm10, float *no2,
+                        float *so2, float *o3, float *co,
+                        float *temperatura, float *humedad, float *velocidadViento)
+{
+    FILE *f = fopen("Historico.dat", "rb");
+    if (!f) return 0;
+
+    Zona registros[500];
+    int total = 0;
+    while (fread(&registros[total], sizeof(Zona), 1, f) == 1 && total < 500) {
+        total++;
+    }
+    fclose(f);
+
+    Zona ultimos10[10];
+    int count = 0;
+    
+    for (int i = total - 1; i >= 0 && count < 10; i--) {
+        if (_stricmp(registros[i].nombreZona, nombreZona) == 0) {
+            ultimos10[count] = registros[i];
+            count++;
+        }
+    }
+
+    if (count == 0) return 0;
+
+    float sumaPM25 = 0, sumaPM10 = 0, sumaNO2 = 0, sumaSO2 = 0, sumaO3 = 0, sumaCO = 0;
+    float sumaTemp = 0, sumaHumedad = 0, sumaVViento = 0;
+    float sumaPesos = 0;
+
+    for (int i = 0; i < count; i++) {
+        float peso = count - i;
+        
+        sumaPM25 += ultimos10[i].NivelesAcual.PM2_5 * peso;
+        sumaPM10 += ultimos10[i].NivelesAcual.PM10 * peso;
+        sumaNO2  += ultimos10[i].NivelesAcual.NO2 * peso;
+        sumaSO2  += ultimos10[i].NivelesAcual.SO2 * peso;
+        sumaO3   += ultimos10[i].NivelesAcual.O3 * peso;
+        sumaCO   += ultimos10[i].NivelesAcual.CO * peso;
+        
+        sumaTemp += ultimos10[i].NivelesAcual.factores.temperatura * peso;
+        sumaHumedad += ultimos10[i].NivelesAcual.factores.humedad * peso;
+        sumaVViento += ultimos10[i].NivelesAcual.factores.velocidadViento * peso;
+        
+        sumaPesos += peso;
+    }
+
+    *pm25 = sumaPM25 / sumaPesos;
+    *pm10 = sumaPM10 / sumaPesos;
+    *no2  = sumaNO2 / sumaPesos;
+    *so2  = sumaSO2 / sumaPesos;
+    *o3   = sumaO3 / sumaPesos;
+    *co   = sumaCO / sumaPesos;
+    
+    *temperatura = sumaTemp / sumaPesos;
+    *humedad = sumaHumedad / sumaPesos;
+    *velocidadViento = sumaVViento / sumaPesos;
+
+    /* AJUSTAR contaminantes por factores climáticos */
+    
+    /* Factor por viento: viento fuerte dispersa más */
+    float factorViento = 1.0;
+    if (*velocidadViento > 8.0) {
+        factorViento = 0.70; /* 30% menos contaminantes */
+    } else if (*velocidadViento > 3.0) {
+        factorViento = 0.92;
+    } else if (*velocidadViento < 2.0) {
+        factorViento = 1.10; /* 10% más si hay poco viento */
+    }
+
+    /* Factor por temperatura: temp alta = más dispersión */
+    float factorTemp = 1.0;
+    if (*temperatura > 24.0) {
+        factorTemp = 0.90;
+    } else if (*temperatura < 15.0) {
+        factorTemp = 1.05;
+    }
+
+    /* Factor por humedad: humedad alta = lluvia potencial */
+    float factorHumedad = 1.0;
+    if (*humedad > 70.0) {
+        factorHumedad = 0.88; /* lluvia limpia */
+    } else if (*humedad < 40.0) {
+        factorHumedad = 1.08; /* aire seco, menos dispersión */
+    }
+
+    /* Aplicar ajustes */
+    float ajuste = factorViento * factorTemp * factorHumedad;
+    
+    *pm25 *= ajuste;
+    *pm10 *= ajuste;
+    *no2  *= ajuste;
+    *so2  *= ajuste;
+    *o3   *= ajuste;
+    *co   *= ajuste;
+
+    return count;
+}
+
+void TablaLimitesICA()
+{
+    printf("=== Tabla de Limites de ICA por Contaminante ===\n");
+    printf("| Contaminante | Rango de Concentracion | Rango de ICA | Nivel de Calidad               |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+    printf("| PM2.5 (ug/m3)| 0.0 - 12.0             | 0 - 50       | Buena                          |\n");
+    printf("| PM2.5 (ug/m3)| 12.1 - 35.4            | 51 - 100     | Moderada                       |\n");
+    printf("| PM2.5 (ug/m3)| 35.5 - 55.4            | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| PM2.5 (ug/m3)| 55.5 - 150.4           | 151 - 200    | Insalubre                      |\n");
+    printf("| PM2.5 (ug/m3)| 150.5 - 250.4          | 201 - 300    | Muy insalubre                  |\n");
+    printf("| PM2.5 (ug/m3)| 250.5 - 500.4          | 301 - 500    | Peligrosa                      |\n");
+    printf("| PM2.5 (ug/m3)| > 500.4                | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+
+    printf("| PM10 (ug/m3) | 0 - 54                 | 0 - 50       | Buena                          |\n");
+    printf("| PM10 (ug/m3) | 55 - 154               | 51 - 100     | Moderada                       |\n");
+    printf("| PM10 (ug/m3) | 155 - 254              | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| PM10 (ug/m3) | 255 - 354              | 151 - 200    | Insalubre                      |\n");
+    printf("| PM10 (ug/m3) | 355 - 424              | 201 - 300    | Muy insalubre                  |\n");
+    printf("| PM10 (ug/m3) | 425 - 604              | 301 - 500    | Peligrosa                      |\n");
+    printf("| PM10 (ug/m3) | > 604                  | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");  
+    printf("| NO2 (ppb)    | 0 - 53                 | 0 - 50       | Buena                          |\n");
+    printf("| NO2 (ppb)    | 54 - 100               | 51 - 100     | Moderada                       |\n");
+    printf("| NO2 (ppb)    | 101 - 360              | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| NO2 (ppb)    | 361 - 649              | 151 - 200    | Insalubre                      |\n");
+    printf("| NO2 (ppb)    | 650 - 1249             | 201 - 300    | Muy insalubre                  |\n");
+    printf("| NO2 (ppb)    | 1250 - 2049            | 301 - 500    | Peligrosa                      |\n");
+    printf("| NO2 (ppb)    | > 2049                 | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+    printf("| SO2 (ppb)    | 0 - 35                 | 0 - 50       | Buena                          |\n");
+    printf("| SO2 (ppb)    | 36 - 75                | 51 - 100     | Moderada                       |\n");
+    printf("| SO2 (ppb)    | 76 - 185               | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| SO2 (ppb)    | 186 - 304              | 151 - 200    | Insalubre                      |\n");
+    printf("| SO2 (ppb)    | 305 - 604              | 201 - 300    | Muy insalubre                  |\n");
+    printf("| SO2 (ppb)    | 605 - 1004             | 301 - 500    | Peligrosa                      |\n");
+    printf("| SO2 (ppb)    | > 1004                 | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+    printf("| O3 (ppm)     | 0.0 - 0.054            | 0 - 50       | Buena                          |\n");
+    printf("| O3 (ppm)     | 0.055 - 0.070          | 51 - 100     | Moderada                       |\n");
+    printf("| O3 (ppm)     | 0.071 - 0.085          | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| O3 (ppm)     | 0.086 - 0.105          | 151 - 200    | Insalubre                      |\n");
+    printf("| O3 (ppm)     | 0.106 - 0.200          | 201 - 300    | Muy insalubre                  |\n");
+    printf("| O3 (ppm)     | 0.201 - 0.404          | 301 - 500    | Peligrosa                      |\n");
+    printf("| O3 (ppm)     | > 0.404                | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+    printf("| CO (ppm)     | 0.0 - 4.4              | 0 - 50       | Buena                          |\n");
+    printf("| CO (ppm)     | 4.5 - 9.4              | 51 - 100     | Moderada                       |\n");
+    printf("| CO (ppm)     | 9.5 - 12.4             | 101 - 150    | Insalubre para grupos sensibles|\n");
+    printf("| CO (ppm)     | 12.5 - 15.4            | 151 - 200    | Insalubre                      |\n");
+    printf("| CO (ppm)     | 15.5 - 30.4            | 201 - 300    | Muy insalubre                  |\n");
+    printf("| CO (ppm)     | 30.5 - 40.4            | 301 - 500    | Peligrosa                      |\n");
+    printf("| CO (ppm)     | > 40.4                 | > 500        | Extrema emergencia             |\n");
+    printf("-----------------------------------------------------------------------------------------\n");
+    printf("\n");
+}
 
 // ARCHIVOS BINARIOS
 void GuardarDatosActuales(Zona *zona)
