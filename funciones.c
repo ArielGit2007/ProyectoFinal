@@ -68,6 +68,19 @@ void DatosActuales()
     printf("Ingrese el nombre de la zona:\n");
     fgets(zona.nombreZona, sizeof(zona.nombreZona), stdin);
     BorrarSaltolinea(zona.nombreZona);
+    
+    // Validar que la zona no exista ya
+    Zona zonasExistentes[100];
+    int totalZonas = leerDatosActuales(zonasExistentes);
+    for (int i = 0; i < totalZonas; i++) {
+        if (_stricmp(zonasExistentes[i].nombreZona, zona.nombreZona) == 0) {
+            printf("ERROR: La zona '%s' ya existe en el sistema.\n", zona.nombreZona);
+            printf("Use la opcion 'Actualizar datos de una zona existente' para modificarla.\n");
+            printf("\n");
+            return;
+        }
+    }
+    
     printf("Ingrese los niveles de contaminantes actuales:\n");
     printf("PM2.5 (ug/m3): ");
     zona.NivelesAcual.PM2_5 = leerFlotanteSoloMinimo(0);
@@ -98,6 +111,7 @@ void DatosActuales()
     obtenerICA(&zona);
     calidadDelAire(&zona);
     GuardarDatosActuales(&zona);
+    printf("Zona '%s' agregada exitosamente.\n", zona.nombreZona);
 }
 
 void ingresoDatos()
@@ -555,6 +569,50 @@ int promedioUltimos30( char *nombreZona,
     return count;
 }
 
+/* Comparar promedios con límites OMS */
+void compararConLimitesOMS(float pm25, float pm10, float no2, float so2, float o3, float co)
+{
+    printf("\n=== COMPARACION CON LIMITES OMS ===\n");
+    printf("|%-15s |%-18s |%-18s |%-15s\n", "Contaminante", "Promedio (ug/m3)", "Limite OMS (ug/m3)", "Estado");
+    printf("---------------------------------------------------------------------------------\n");
+    
+    // PM2.5 - límite OMS: 15 µg/m³
+    char estado_pm25[20] = "ACEPTABLE";
+    if (pm25 > 15) strcpy(estado_pm25, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "PM2.5", pm25, 15.0, estado_pm25);
+    
+    // PM10 - límite OMS: 45 µg/m³
+    char estado_pm10[20] = "ACEPTABLE";
+    if (pm10 > 45) strcpy(estado_pm10, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "PM10", pm10, 45.0, estado_pm10);
+    
+    // NO2 - límite OMS: 25 µg/m³ (convertir de ppb)
+    float no2_ugm3 = no2 * 1.88;
+    char estado_no2[20] = "ACEPTABLE";
+    if (no2_ugm3 > 25) strcpy(estado_no2, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "NO2", no2_ugm3, 25.0, estado_no2);
+    
+    // SO2 - límite OMS: 40 µg/m³ (convertir de ppb)
+    float so2_ugm3 = so2 * 2.62;
+    char estado_so2[20] = "ACEPTABLE";
+    if (so2_ugm3 > 40) strcpy(estado_so2, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "SO2", so2_ugm3, 40.0, estado_so2);
+    
+    // O3 - límite OMS: 100 µg/m³ (convertir de ppm)
+    float o3_ugm3 = o3 * 1963;
+    char estado_o3[20] = "ACEPTABLE";
+    if (o3_ugm3 > 100) strcpy(estado_o3, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "O3", o3_ugm3, 100.0, estado_o3);
+    
+    // CO - límite OMS: 4000 µg/m³ (convertir de ppm)
+    float co_ugm3 = co * 1145;
+    char estado_co[20] = "ACEPTABLE";
+    if (co_ugm3 > 4000) strcpy(estado_co, "EXCEDIDO");
+    printf("|%-15s |%-18.2f |%-18.2f |%-15s\n", "CO", co_ugm3, 4000.0, estado_co);
+    
+    printf("---------------------------------------------------------------------------------\n");
+}
+
 /* Reporte simple: pide la zona y muestra promedios de los últimos 30 guardados */
 void reportePromediosHistoricos()
 {
@@ -571,13 +629,17 @@ void reportePromediosHistoricos()
         return;
     }
 
-    printf("Promedio de los ultimos %d registros para %s:\n", usados, nombreZona);
-    printf("PM2.5: %.2f\n", pm25);
-    printf("PM10 : %.2f\n", pm10);
-    printf("NO2  : %.2f\n", no2);
-    printf("SO2  : %.2f\n", so2);
-    printf("O3   : %.3f\n", o3);
-    printf("CO   : %.2f\n", co);
+    printf("\n=== PROMEDIO DE ULTIMOS %d REGISTROS ===\n", usados);
+    printf("Zona: %s\n\n", nombreZona);
+    printf("PM2.5: %.2f ug/m3\n", pm25);
+    printf("PM10 : %.2f ug/m3\n", pm10);
+    printf("NO2  : %.2f ppb\n", no2);
+    printf("SO2  : %.2f ppb\n", so2);
+    printf("O3   : %.3f ppm\n", o3);
+    printf("CO   : %.2f ppm\n", co);
+    
+    // Comparar con OMS
+    compararConLimitesOMS(pm25, pm10, no2, so2, o3, co);
 }
 
 void reporteZonas()

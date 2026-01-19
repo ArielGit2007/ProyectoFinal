@@ -75,3 +75,4 @@ int prediccionPonderada(char *nombreZona,
                         float *so2, float *o3, float *co,
                         float *temperatura, float *humedad, float *velocidadViento);
 void TablaLimitesICA();
+void compararConLimitesOMS(float pm25, float pm10, float no2, float so2, float o3, float co);
