@@ -27,6 +27,7 @@ int main(int argc, char const *argv[])
         reporteZonas();
         break;
     case 3:
+        reportePromediosHistoricos();
         break;
 
     default:

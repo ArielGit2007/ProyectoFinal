@@ -171,6 +171,8 @@ void ingresoDatos()
             // Escribir en la posición correcta
             fseek(f, pos, SEEK_SET);
             fwrite(&zona, sizeof(Zona), 1, f);
+            // Guardar copia en historico
+            GuardarDatosHistoricos(&zona);
             printf("Datos actualizados correctamente.\n");
         }
         else
@@ -365,12 +367,12 @@ void calcularICACO(Zona *zonas)
         zonas->ica.ICA_CO = (50.0 / 4.4) * co;
         strcpy(zonas->ica.calidad.nivelCalidadCO, "Buena");
     }
-    else if (co >= 4.5 && co <= 9.4)
+    else if (co > 4.4 && co <= 9.4)
     {
         zonas->ica.ICA_CO = ((100.0 - 51.0) / (9.4 - 4.5)) * (co - 4.5) + 51.0;
         strcpy(zonas->ica.calidad.nivelCalidadCO, "Moderada");
     }
-    else if (co >= 9.5 && co <= 12.4)
+    else if (co > 9.4 && co <= 12.4)
     {
         zonas->ica.ICA_CO = ((150.0 - 101.0) / (12.4 - 9.5)) * (co - 9.5) + 101.0;
         strcpy(zonas->ica.calidad.nivelCalidadCO, "Insalubre para grupos sensibles");
@@ -385,7 +387,7 @@ void calcularICACO(Zona *zonas)
         zonas->ica.ICA_CO = ((300.0 - 201.0) / (30.4 - 15.5)) * (co - 15.5) + 201.0;
         strcpy(zonas->ica.calidad.nivelCalidadCO, "Muy insalubre");
     }
-    else if (co >= 30.5 && co <= 50.4)
+    else if (co > 30.4 && co <= 50.4)
     {
         zonas->ica.ICA_CO = ((500.0 - 301.0) / (50.4 - 30.5)) * (co - 30.5) + 301.0;
         strcpy(zonas->ica.calidad.nivelCalidadCO, "Peligrosa");
@@ -517,6 +519,67 @@ void prevenirContaminacion(Zona *zona)
 
 // Reporte y guardado de datos
 
+/* Promedia los últimos 30 registros guardados para una zona (case-insensitive).
+   Devuelve cuántos promedió (0 si no encontró) y llena los promedios en los punteros. */
+int promedioUltimos30( char *nombreZona,
+                      float *pm25, float *pm10, float *no2,
+                      float *so2, float *o3, float *co)
+{
+    FILE *f = fopen("Historico.dat", "rb");
+    if (!f) return 0;
+
+    Zona registros[500]; /* ajusta tamaño si necesitas más */
+    int total = 0;
+    while (fread(&registros[total], sizeof(Zona), 1, f) == 1 && total < 500) {
+        total++;
+    }
+    fclose(f);
+
+    int count = 0;
+    *pm25 = *pm10 = *no2 = *so2 = *o3 = *co = 0;
+
+    for (int i = total - 1; i >= 0 && count < 30; i--) {
+        if (_stricmp(registros[i].nombreZona, nombreZona) == 0) {
+            *pm25 += registros[i].NivelesAcual.PM2_5;
+            *pm10 += registros[i].NivelesAcual.PM10;
+            *no2  += registros[i].NivelesAcual.NO2;
+            *so2  += registros[i].NivelesAcual.SO2;
+            *o3   += registros[i].NivelesAcual.O3;
+            *co   += registros[i].NivelesAcual.CO;
+            count++;
+        }
+    }
+    if (count == 0) return 0;
+
+    *pm25 /= count; *pm10 /= count; *no2 /= count; *so2 /= count; *o3 /= count; *co /= count;
+    return count;
+}
+
+/* Reporte simple: pide la zona y muestra promedios de los últimos 30 guardados */
+void reportePromediosHistoricos()
+{
+    char nombreZona[50];
+    getchar(); /* limpiar buffer */
+    printf("Ingrese el nombre de la zona para promediar (ultimos 30):\n");
+    fgets(nombreZona, sizeof(nombreZona), stdin);
+    nombreZona[strcspn(nombreZona, "\n")] = 0;
+
+    float pm25, pm10, no2, so2, o3, co;
+    int usados = promedioUltimos30(nombreZona, &pm25, &pm10, &no2, &so2, &o3, &co);
+    if (usados == 0) {
+        printf("No hay registros historicos para esa zona.\n");
+        return;
+    }
+
+    printf("Promedio de los ultimos %d registros para %s:\n", usados, nombreZona);
+    printf("PM2.5: %.2f\n", pm25);
+    printf("PM10 : %.2f\n", pm10);
+    printf("NO2  : %.2f\n", no2);
+    printf("SO2  : %.2f\n", so2);
+    printf("O3   : %.3f\n", o3);
+    printf("CO   : %.2f\n", co);
+}
+
 void reporteZonas()
 {
     Zona zonas[100];
@@ -570,7 +633,7 @@ void GuardarDatosActuales(Zona *zona)
     fwrite(zona, sizeof(Zona), 1, f);
     fclose(f);
 }
-/*void GuardarDatosHistoricos(Zona *zona)
+void GuardarDatosHistoricos(Zona *zona)
 {
 
     FILE *f;
@@ -582,7 +645,7 @@ void GuardarDatosActuales(Zona *zona)
     }
     fwrite(zona, sizeof(Zona), 1, f);
     fclose(f);
-}*/
+}
 
 int leerDatosActuales(Zona *zonas)
 {

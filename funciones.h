@@ -68,6 +68,7 @@ void ingresoDatos();
 void calidadDelAire(Zona *zona);
 void BorrarSaltolinea(char *cadena);
 void prevenirContaminacion(Zona *zona);
-
+void reportePromediosHistoricos();
+int promedioUltimos30(char *nombreZona, float *pm25, float *pm10 , float *no2, float *so2, float *o3, float *co);
 
 
