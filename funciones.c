@@ -111,6 +111,7 @@ void DatosActuales()
     obtenerICA(&zona);
     calidadDelAire(&zona);
     GuardarDatosActuales(&zona);
+    GuardarDatosHistoricos(&zona);
     printf("Zona '%s' agregada exitosamente.\n", zona.nombreZona);
 }
 
